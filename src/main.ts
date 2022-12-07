@@ -6,6 +6,9 @@ import {
   Int64,
   Character,
   shutdown,
+  CircuitString,
+  PrivateKey,
+  Signature,
 } from 'snarkyjs';
 
 async function main() {
@@ -34,6 +37,29 @@ async function main() {
   console.log('char1: ' + char1.toString());
   console.log('chars equal: ' + charsEqual.toString());
   console.log('fields in char1: ' + char1.toFields().length);
+
+  const str1 = CircuitString.fromString('foobar');
+
+  console.log('str1: ' + str1.toString());
+  console.log('fields in str1: ' + str1.toFields().length);
+
+  const privateKey = PrivateKey.random();
+  const publicKey = privateKey.toPublicKey();
+
+  const data1 = char2.toFields().concat(signedSum.toFields());
+  const data2 = char1.toFields().concat(str1.toFields());
+
+  const sign = Signature.create(privateKey, data2);
+  const verifiedData1 = sign.verify(publicKey, data1);
+  const verifiedData2 = sign.verify(publicKey, data2);
+
+  console.log('private key: ' + privateKey.toBase58());
+  console.log('public key: ' + publicKey.toBase58());
+  console.log('fields in private key: ' + privateKey.toFields().length);
+  console.log('fields in public key: ' + publicKey.toFields().length);
+  console.log('verify sign for data1: ' + verifiedData1.toString());
+  console.log('verify sign for data2: ' + verifiedData2.toString());
+  console.log('fields in sign: ' + sign.toFields().length);
 
   await shutdown();
 }
