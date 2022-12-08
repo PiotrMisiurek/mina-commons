@@ -67,6 +67,10 @@ async function main() {
     x: Field,
     y: Field,
   }) {
+    static addPoints(a: Point, b: Point) {
+      return a.add(b);
+    }
+
     add(another_point: Point) {
       return new Point({
         x: this.x.add(another_point.x),
@@ -78,16 +82,29 @@ async function main() {
   const point1 = new Point({ x: Field(10), y: Field(4) });
   const point2 = new Point({ x: Field(1), y: Field(2) });
 
-  const pointSum = point1.add(point2);
+  const pointSums = [point1.add(point2), Point.addPoints(point1, point2)];
 
   console.log(
     'Point summary - x: ' +
-      pointSum.x.toString() +
+      pointSums[0].x.toString() +
       ' | y: ' +
-      pointSum.y.toString()
+      pointSums[0].y.toString()
   );
+  pointSums[0].x.assertEquals(pointSums[1].x);
+  pointSums[0].y.assertEquals(pointSums[1].y);
 
-  await shutdown();
+  class Points4 extends Struct({
+    points: [Point, Point, Point, Point],
+  }) {}
+
+  const pointsArray = new Array(4)
+    .fill(null)
+    .map((_, i) => new Point({ x: Field(i), y: Field(i * i) }));
+  const points4 = new Points4({ points: pointsArray });
+
+  console.log('points4: ' + JSON.stringify(points4));
+
+  shutdown();
 }
 
 main();
