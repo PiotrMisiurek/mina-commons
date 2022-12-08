@@ -9,6 +9,8 @@ import {
   CircuitString,
   PrivateKey,
   Signature,
+  Struct,
+  Field,
 } from 'snarkyjs';
 
 async function main() {
@@ -60,6 +62,30 @@ async function main() {
   console.log('verify sign for data1: ' + verifiedData1.toString());
   console.log('verify sign for data2: ' + verifiedData2.toString());
   console.log('fields in sign: ' + sign.toFields().length);
+
+  class Point extends Struct({
+    x: Field,
+    y: Field,
+  }) {
+    add(another_point: Point) {
+      return new Point({
+        x: this.x.add(another_point.x),
+        y: this.y.add(another_point.y),
+      });
+    }
+  }
+
+  const point1 = new Point({ x: Field(10), y: Field(4) });
+  const point2 = new Point({ x: Field(1), y: Field(2) });
+
+  const pointSum = point1.add(point2);
+
+  console.log(
+    'Point summary - x: ' +
+      pointSum.x.toString() +
+      ' | y: ' +
+      pointSum.y.toString()
+  );
 
   await shutdown();
 }
