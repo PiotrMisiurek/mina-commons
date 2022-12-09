@@ -11,6 +11,7 @@ import {
   Signature,
   Struct,
   Field,
+  Circuit,
 } from 'snarkyjs';
 
 async function main() {
@@ -103,6 +104,43 @@ async function main() {
   const points4 = new Points4({ points: pointsArray });
 
   console.log('points4: ' + JSON.stringify(points4));
+
+  const input1 = Int64.from(10);
+  const input2 = Int64.from(-15);
+
+  const inputSum = input1.add(input2);
+
+  const inputSumAbs = Circuit.if(
+    inputSum.isPositive(),
+    inputSum,
+    inputSum.mul(Int64.from(-1))
+  );
+
+  console.log('inputSum: ' + inputSum);
+  console.log('inputSumAbs: ' + inputSumAbs);
+
+  const input3 = Int64.from(22);
+
+  const input1Largest = input1
+    .sub(input2)
+    .isPositive()
+    .and(input1.sub(input3).isPositive());
+  const input2Largest = input2
+    .sub(input1)
+    .isPositive()
+    .and(input2.sub(input3).isPositive());
+  const input3Largest = input3
+    .sub(input1)
+    .isPositive()
+    .and(input3.sub(input2).isPositive());
+
+  const largest = Circuit.switch(
+    [input1Largest, input2Largest, input3Largest],
+    Int64,
+    [input1, input2, input3]
+  );
+
+  console.log('largest: ' + largest);
 
   shutdown();
 }
