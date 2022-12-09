@@ -12,7 +12,13 @@ import {
   Struct,
   Field,
   Circuit,
+  MerkleTree,
+  MerkleWitness,
+  Mina,
+  AccountUpdate,
 } from 'snarkyjs';
+
+import { BasicMerkleTreeContract } from './BasicMerkleTreeContract.js';
 
 async function main() {
   await isReady;
@@ -141,6 +147,51 @@ async function main() {
   );
 
   console.log('largest: ' + largest);
+
+  const local = Mina.LocalBlockchain();
+  Mina.setActiveInstance(local);
+  const deployerAccount = local.testAccounts[0].privateKey;
+
+  {
+    const height = 20;
+    const tree = new MerkleTree(height);
+    class MerkleWitness20 extends MerkleWitness(20) {}
+
+    const basicTreeZkAppPrivateKey = PrivateKey.random();
+    const basicTreeZkAppAddress = basicTreeZkAppPrivateKey.toPublicKey();
+
+    const zkapp = new BasicMerkleTreeContract(basicTreeZkAppAddress);
+
+    const deployTx = await Mina.transaction(deployerAccount, () => {
+      AccountUpdate.fundNewAccount(deployerAccount);
+      zkapp.deploy({ zkappKey: basicTreeZkAppPrivateKey });
+      zkapp.initState(tree.getRoot());
+      zkapp.sign(basicTreeZkAppPrivateKey);
+    });
+    await deployTx.send();
+
+    const incrementIndex = 522;
+    const incrementAmount = Field(9);
+
+    const witness = new MerkleWitness20(
+      tree.getWitness(BigInt(incrementIndex))
+    );
+    tree.setLeaf(BigInt(incrementIndex), incrementAmount);
+
+    const updateTx = await Mina.transaction(deployerAccount, () => {
+      zkapp.update(witness, Field.zero, incrementAmount);
+      zkapp.sign(basicTreeZkAppPrivateKey);
+    });
+    await updateTx.send();
+
+    console.log(
+      'BasicMerkleTree: local tree hash after update: ' + tree.getRoot()
+    );
+    console.log(
+      'BasicMerkleTree: smart contract root hash after update: ' +
+        zkapp.treeRoot.get()
+    );
+  }
 
   shutdown();
 }
